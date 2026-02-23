@@ -1,0 +1,30 @@
+[
+  {
+    "id": "ord-001",
+    "customerId": "cust-123",
+    "items": [
+      { "sku": "WIDGET-A", "qty": 2, "price": 29.99 },
+      { "sku": "GADGET-B", "qty": 1, "price": 99.50 }
+    ],
+    "status": "paid",
+    "createdAt": "2025-02-20T10:00:00Z"
+  },
+  {
+    "id": "ord-002",
+    "customerId": "cust-456",
+    "items": [
+      { "sku": "TOOL-C", "qty": 3, "price": 15.00 }
+    ],
+    "status": "pending",
+    "createdAt": "2025-02-21T14:30:00Z"
+  },
+  {
+    "id": "ord-003",
+    "customerId": "cust-789",
+    "items": [
+      { "sku": "PART-D", "qty": 5, "price": 4.99 }
+    ],
+    "status": "shipped",
+    "createdAt": "2025-02-22T09:15:00Z"
+  }
+]
