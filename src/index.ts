@@ -10,7 +10,6 @@
  * Run: npm run dev
  * API: http://localhost:3001
  */
-import 'reflect-metadata';
 import { HazelApp } from '@hazeljs/core';
 import { AppModule } from './app.module';
 import logger from '@hazeljs/core';
