@@ -31,7 +31,10 @@ async function bootstrap(): Promise<void> {
   logger.info('  POST /data/pipeline/orders     - Process single order');
   logger.info('  POST /data/pipeline/orders/batch - Batch process orders');
   logger.info('  POST /data/pipeline/users     - Process single user');
+  logger.info('  POST /data/pipeline/logs     - Process log (PipelineBuilder)');
   logger.info('  POST /data/quality             - Run data quality checks');
+  logger.info('  POST /data/quality/profile     - Run data profiling');
+  logger.info('  POST /data/quality/anomalies   - Detect anomalies');
   logger.info('  GET  /health                  - Health check');
   logger.info('');
 }

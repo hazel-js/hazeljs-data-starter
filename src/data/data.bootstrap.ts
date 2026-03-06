@@ -24,8 +24,34 @@ export class DataBootstrap {
     );
 
     this.qualityService.registerCheck(
+      'order-uniqueness',
+      this.qualityService.uniqueness(['id'])
+    );
+
+    this.qualityService.registerCheck(
+      'order-status-ref',
+      this.qualityService.referentialIntegrity('status', [
+        'pending',
+        'paid',
+        'shipped',
+        'delivered',
+        'cancelled',
+      ])
+    );
+
+    this.qualityService.registerCheck(
       'user-completeness',
       this.qualityService.completeness(['email', 'name', 'age', 'role'])
+    );
+
+    this.qualityService.registerCheck(
+      'user-age-range',
+      this.qualityService.range('age', { min: 0, max: 150 })
+    );
+
+    this.qualityService.registerCheck(
+      'user-role-ref',
+      this.qualityService.referentialIntegrity('role', ['user', 'admin', 'moderator', 'guest'])
     );
   }
 }

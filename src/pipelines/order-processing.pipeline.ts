@@ -81,7 +81,11 @@ export class OrderProcessingPipeline extends PipelineBase {
     return data as RawOrder;
   }
 
-  @Transform({ step: 3, name: 'enrich' })
+  @Transform({
+    step: 3,
+    name: 'enrich',
+    when: (d) => (d as RawOrder).status !== 'cancelled',
+  })
   async enrich(data: RawOrder): Promise<ProcessedOrder> {
     const itemList = data.items ?? [];
     const items = itemList.map((item) => ({
@@ -102,6 +106,29 @@ export class OrderProcessingPipeline extends PipelineBase {
       total,
       tax,
       createdAt: data.createdAt ?? '',
+      processedAt: new Date().toISOString(),
+    };
+  }
+
+  @Transform({ step: 4, name: 'finalize' })
+  async finalize(data: RawOrder | ProcessedOrder): Promise<ProcessedOrder> {
+    const d = data as ProcessedOrder & RawOrder;
+    if ('total' in d && typeof d.total === 'number') {
+      return d as ProcessedOrder;
+    }
+    return {
+      id: d.id ?? '',
+      customerId: d.customerId ?? '',
+      items: (d.items ?? []).map((item) => ({
+        sku: item.sku ?? '',
+        qty: item.qty ?? 0,
+        price: item.price ?? 0,
+        subtotal: (item.qty ?? 0) * (item.price ?? 0),
+      })),
+      status: d.status ?? 'pending',
+      total: 0,
+      tax: 0,
+      createdAt: d.createdAt ?? '',
       processedAt: new Date().toISOString(),
     };
   }

@@ -12,8 +12,8 @@
     "lint:fix": "eslint \"src/**/*.ts\" --fix"
   },
   "dependencies": {
-    "@hazeljs/core": "0.2.0-beta.38",
-    "@hazeljs/data": "0.2.0-beta.38",
+    "@hazeljs/core": "0.2.0-beta.69",
+    "@hazeljs/data": "0.2.0-beta.69",
     "reflect-metadata": "^0.2.2"
   },
   "devDependencies": {

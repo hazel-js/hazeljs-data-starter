@@ -14,6 +14,7 @@ import {
   ETLService,
   Schema,
   Injectable,
+  Redact,
 } from '@hazeljs/data';
 
 export interface RawUser {
@@ -68,6 +69,7 @@ export class UserIngestionPipeline extends PipelineBase {
   }
 
   @Transform({ step: 3, name: 'sanitize' })
+  @Redact({ fields: ['internalId'] })
   async sanitize(data: RawUser): Promise<ProcessedUser> {
     return {
       email: data.email ?? '',

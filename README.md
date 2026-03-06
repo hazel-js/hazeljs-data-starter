@@ -1,22 +1,28 @@
 # HazelJS Data Starter
 
-A comprehensive, real-world example demonstrating **@hazeljs/data** for data processing and ETL in Node.js. This starter implements production-ready pipelines with Schema validation, batch processing, and data quality checks.
+A comprehensive, real-world example demonstrating **@hazeljs/data** for data processing and ETL in Node.js. This starter implements production-ready pipelines with Schema validation, batch processing, data quality, and programmatic pipelines.
 
 ## Features
 
-- **OrderProcessingPipeline** – E-commerce order ETL: normalize → validate → enrich (total, tax)
-- **UserIngestionPipeline** – User profile ETL: normalize → validate → sanitize
+- **OrderProcessingPipeline** – E-commerce order ETL: normalize → validate → enrich (with conditional step for cancelled orders) → finalize
+- **UserIngestionPipeline** – User profile ETL: normalize → validate → sanitize (with `@Redact` for PII)
+- **LogEnrichmentPipeline** – Programmatic pipeline via PipelineBuilder: branch, parallel, catch
 - **Schema validation** – Fluent Schema API (string, number, object, array, email, oneOf)
 - **Batch processing** – Process arrays through pipelines via StreamService
-- **Quality checks** – Completeness and notNull checks via QualityService
-- **REST API** – Endpoints for pipeline execution and quality reports
+- **Quality checks** – Completeness, notNull, uniqueness, range, referentialIntegrity via QualityService
+- **Data profiling & anomaly detection** – `profile()` and `detectAnomalies()` endpoints
+- **SchemaFaker & StreamProcessor** – Demonstrated in `npm run run:sample`
+- **REST API** – Endpoints for pipeline execution, quality reports, profiling, and anomalies
 
 ## Quick Start
 
 ```bash
-# Install dependencies (from hazeljs repo root)
+# Install dependencies (from hazeljs repo root - uses local packages via file:)
 cd hazeljs-data-starter
 npm install
+
+# Or with published packages: replace file: deps in package.json with
+# "@hazeljs/core": "^0.2.0-beta.63", "@hazeljs/data": "^0.2.0-beta.63"
 
 # Build
 npm run build
@@ -135,6 +141,50 @@ curl -X POST http://localhost:3001/data/quality \
   }'
 ```
 
+### Process Log (PipelineBuilder)
+
+```bash
+curl -X POST http://localhost:3001/data/pipeline/logs \
+  -H "Content-Type: application/json" \
+  -d '{
+    "level": "error",
+    "message": "Connection timeout",
+    "host": "api-01"
+  }'
+```
+
+### Run Data Profiling
+
+```bash
+curl -X POST http://localhost:3001/data/quality/profile \
+  -H "Content-Type: application/json" \
+  -d '{
+    "dataset": "users",
+    "data": [
+      { "name": "Alice", "age": 28 },
+      { "name": "Bob", "age": 35 },
+      { "name": "Carol", "age": 42 }
+    ]
+  }'
+```
+
+### Detect Anomalies
+
+```bash
+curl -X POST http://localhost:3001/data/quality/anomalies \
+  -H "Content-Type: application/json" \
+  -d '{
+    "data": [
+      { "value": 10 },
+      { "value": 11 },
+      { "value": 12 },
+      { "value": 1000 }
+    ],
+    "fields": ["value"],
+    "threshold": 1.5
+  }'
+```
+
 ## Project Structure
 
 ```
@@ -143,17 +193,18 @@ hazeljs-data-starter/
 │   ├── index.ts                 # Bootstrap & server
 │   ├── app.module.ts            # App module with DataModule
 │   ├── pipelines/
-│   │   ├── order-processing.pipeline.ts  # Order ETL
-│   │   ├── user-ingestion.pipeline.ts   # User ETL
+│   │   ├── order-processing.pipeline.ts  # Order ETL (with conditional enrich)
+│   │   ├── user-ingestion.pipeline.ts   # User ETL (with @Redact PII)
+│   │   ├── log-enrichment.pipeline.ts   # PipelineBuilder (branch, parallel, catch)
 │   │   └── index.ts
 │   ├── controllers/
 │   │   └── data.controller.ts   # REST API
 │   ├── data/
-│   │   ├── data.bootstrap.ts     # Quality checks registration
+│   │   ├── data.bootstrap.ts     # Quality checks (uniqueness, range, referentialIntegrity)
 │   │   ├── sample-orders.json
 │   │   └── sample-users.json
 │   └── scripts/
-│       └── run-sample-pipelines.ts  # CLI pipeline execution
+│       └── run-sample-pipelines.ts  # CLI: pipelines, SchemaFaker, StreamProcessor
 ├── package.json
 ├── tsconfig.json
 └── README.md
@@ -225,9 +276,12 @@ This loads `src/data/sample-orders.json` and `src/data/sample-users.json` and pr
 
 1. **Flink integration** – Configure `DataModule.forRoot({ flink: { url: '...' } })` for stream deployment.
 2. **@Stream pipelines** – Add `@Stream({ name, source, sink })` for Kafka/Flink-style streaming.
-3. **PipelineBuilder** – Compose pipelines programmatically with `PipelineBuilder`.
+3. **PipelineBuilder** – See `log-enrichment.pipeline.ts` for branch, parallel, catch.
 4. **TransformerService** – Use built-ins: `trimString`, `toLowerCase`, `parseJson`, `pick`, `omit`, `renameKeys`.
 5. **Custom quality checks** – Register with `qualityService.registerCheck()`.
+6. **PII decorators** – Use `@Mask`, `@Redact`, `@Encrypt` on pipeline steps.
+7. **SchemaFaker** – Generate test data with `SchemaFaker.generate(schema)`.
+8. **StreamProcessor** – Use `tumblingWindow`, `slidingWindow`, `sessionWindow`, `joinStreams` for streaming.
 
 ## Environment
 

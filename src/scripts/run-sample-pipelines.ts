@@ -2,18 +2,26 @@
 /**
  * Run sample data through pipelines (no HTTP server)
  *
+ * Demonstrates:
+ * - OrderProcessingPipeline, UserIngestionPipeline (decorator-based)
+ * - logEnrichmentPipeline (PipelineBuilder programmatic)
+ * - SchemaFaker for generating test data
+ * - StreamProcessor with tumbling window
+ *
  * Usage: npm run run:sample
  */
-import 'reflect-metadata';
-import { ETLService, SchemaValidator } from '@hazeljs/data';
-import { OrderProcessingPipeline, UserIngestionPipeline } from '../pipelines';
+import {
+  Schema,
+  SchemaFaker,
+  StreamProcessor,
+  ETLService,
+  SchemaValidator,
+} from '@hazeljs/data';
+import { OrderProcessingPipeline, UserIngestionPipeline, logEnrichmentPipeline } from '../pipelines';
 import * as fs from 'fs';
 import * as path from 'path';
 
-// Note: In a real setup you'd bootstrap the app or use the container properly.
-// This script demonstrates programmatic pipeline execution.
 async function main(): Promise<void> {
-  // Minimal setup - we need ETLService and SchemaValidator for pipelines
   const schemaValidator = new SchemaValidator();
   const etlService = new ETLService(schemaValidator);
   const orderPipeline = new OrderProcessingPipeline(etlService);
@@ -44,6 +52,38 @@ async function main(): Promise<void> {
       console.log(`  User ${i + 1}:`, JSON.stringify(result));
     }
   }
+
+  // PipelineBuilder (log enrichment)
+  console.log('\nLogEnrichmentPipeline (PipelineBuilder):');
+  const logResult = await logEnrichmentPipeline.execute({
+    level: 'error',
+    message: 'Connection timeout',
+    host: 'api-01',
+  });
+  console.log('  Result:', JSON.stringify(logResult));
+
+  // SchemaFaker - generate fake data from schema
+  console.log('\nSchemaFaker (fake data from schema):');
+  const SimpleUserSchema = Schema.object({
+    name: Schema.string(),
+    age: Schema.number().min(0).max(150),
+  });
+  const fakeUsers = SchemaFaker.generateMany(SimpleUserSchema, 2);
+  console.log('  Generated:', JSON.stringify(fakeUsers));
+
+  // StreamProcessor - tumbling window
+  console.log('\nStreamProcessor (tumbling window):');
+  async function* timestampedSource() {
+    yield { value: 1, timestamp: 100 };
+    yield { value: 2, timestamp: 150 };
+    yield { value: 3, timestamp: 250 };
+  }
+  const processor = new StreamProcessor(etlService);
+  const batches: unknown[] = [];
+  for await (const batch of processor.tumblingWindow(timestampedSource(), 100)) {
+    batches.push(batch);
+  }
+  console.log('  Batches:', JSON.stringify(batches));
 
   console.log('\nDone.');
 }
